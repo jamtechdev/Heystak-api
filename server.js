@@ -22,11 +22,11 @@ const FACEBOOK_ADS_URL = process.env.FACEBOOK_ADS_URL; // Your Facebook Ads Libr
 
 // HashMap to store the last processed page for each job
 const jobState = {
-  job1: 0,   // Initial start for the first cron job (1 hr interval)
+  job1: 0, // Initial start for the first cron job (1 hr interval)
   job2: 101, // Initial start for the second cron job (3 hr interval)
   job3: 900, // Initial start for the third cron job (10 hr interval)
   job4: 2000, // Initial start for the fourth cron job (16 hr interval)
-  job5: 10000 // Initial start for the fifth cron job (2 day interval)
+  job5: 10000, // Initial start for the fifth cron job (2 day interval)
 };
 
 // Function to split an array into chunks
@@ -42,7 +42,7 @@ function chunkArray(array, chunkSize) {
 async function fetchDataAndUpdate(pageStart, pageSize, chunkSize = 20) {
   try {
     // Check the total number of rows first
-    console.log("job start")
+    console.log("job start");
     const { count: totalRows, error: countError } = await supabase
       .from("ads")
       .select("*", { count: "exact", head: true });
@@ -51,7 +51,9 @@ async function fetchDataAndUpdate(pageStart, pageSize, chunkSize = 20) {
 
     // Ensure pageStart is within the range of total rows
     if (pageStart >= totalRows) {
-      console.log(`Reached the end of available data. Total rows: ${totalRows}`);
+      console.log(
+        `Reached the end of available data. Total rows: ${totalRows}`
+      );
       return; // Exit the function if there's no more data to fetch
     }
 
@@ -83,10 +85,14 @@ async function fetchDataAndUpdate(pageStart, pageSize, chunkSize = 20) {
         // Process each chunk of ads
         for (const ad of chunk) {
           try {
-            const response = await fetch(`${FACEBOOK_ADS_URL}/?id=${ad.adArchiveID}`);
+            const response = await fetch(
+              `${FACEBOOK_ADS_URL}/?id=${ad.adArchiveID}`
+            );
 
             if (!response.ok) {
-              throw new Error(`Facebook Ads Library API responded with ${response.status}`);
+              throw new Error(
+                `Facebook Ads Library API responded with ${response.status}`
+              );
             }
 
             const htmlData = await response.text();
@@ -107,20 +113,30 @@ async function fetchDataAndUpdate(pageStart, pageSize, chunkSize = 20) {
                 .eq("id", ad.adId);
 
               if (updateError) {
-                console.error(`Error updating ad with id ${ad.adId}:`, updateError);
+                console.error(
+                  `Error updating ad with id ${ad.adId}:`,
+                  updateError
+                );
               } else {
-                console.log(`Updated ad ${ad.adId} with live_status: ${changeIsActive}`);
+                console.log(
+                  `Updated ad ${ad.adId} with live_status: ${changeIsActive}`
+                );
               }
             } else {
               // No isActive status found, update live_status to empty string
-              console.log(`No isActive status found for ad ${ad.adId}, updating live_status to NULL.`);
+              console.log(
+                `No isActive status found for ad ${ad.adId}, updating live_status to NULL.`
+              );
               // const { data: updateData, error: updateError } = await supabase
               //   .from("ads")
               //   .update({ live_status: '' })
               //   .eq("id", ad.adId);
 
               if (updateError) {
-                console.error(`Error updating ad with id ${ad.adId} to NULL:`, updateError);
+                console.error(
+                  `Error updating ad with id ${ad.adId} to NULL:`,
+                  updateError
+                );
               } else {
                 console.log(`Updated ad ${ad.adId} with live_status: NULL`);
               }
@@ -168,15 +184,16 @@ function job5() {
 }
 
 // Set up cron jobs with different schedules
-cron.schedule("0 * * * *", job1); // Every 1 hour
-cron.schedule("0 */3 * * *", job2); // Every 3 hours
-cron.schedule("0 */10 * * *", job3); // Every 10 hours
-cron.schedule("0 */16 * * *", job4); // Every 16 hours
-cron.schedule("0 0 */2 * *", job5); // Every 2 days
 
 // Start the Express server
 app.listen(process.env.BASE_PORT || 8090, () => {
   console.log(
     `Proxy server running at http://localhost:${process.env.BASE_PORT || 8090}`
   );
+  console.log("Starting cron jobs...");
+  cron.schedule("0 * * * *", job1); // Every 1 hour
+  cron.schedule("0 */3 * * *", job2); // Every 3 hours
+  cron.schedule("0 */10 * * *", job3); // Every 10 hours
+  cron.schedule("0 */16 * * *", job4); // Every 16 hours
+  cron.schedule("0 0 */2 * *", job5); // Every 2 days
 });
