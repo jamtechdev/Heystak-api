@@ -42,6 +42,7 @@ function chunkArray(array, chunkSize) {
 async function fetchDataAndUpdate(pageStart, pageSize, chunkSize = 20) {
   try {
     // Check the total number of rows first
+    console.log("job start")
     const { count: totalRows, error: countError } = await supabase
       .from("ads")
       .select("*", { count: "exact", head: true });
