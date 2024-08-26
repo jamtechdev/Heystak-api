@@ -133,10 +133,7 @@ async function fetchDataAndUpdate(pageStart, pageSize, chunkSize = 20) {
               //   .eq("id", ad.adId);
 
               if (updateError) {
-                console.error(
-                  `Error updating ad with id ${ad.adId} to NULL:`,
-                  updateError
-                );
+                console.error(`Error updating ad with id ${ad.adId} to NULL:`);
               } else {
                 console.log(`Updated ad ${ad.adId} with live_status: NULL`);
               }
