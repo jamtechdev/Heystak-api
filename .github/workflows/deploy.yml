@@ -15,7 +15,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
       - name: Publish to Cloudflare Workers
         run: wrangler publish
-        env:
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
