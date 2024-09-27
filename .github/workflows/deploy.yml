@@ -22,4 +22,4 @@ jobs:
         CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}  # Use the correct environment variable for account ID
       run: |
         echo "Deploying to Cloudflare Workers"
-        wrangler publish
+        wrangler deploy

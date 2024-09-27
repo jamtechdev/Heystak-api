@@ -1,5 +1,5 @@
 name = "heystak-api"
-main = "/server.js"
+main = "./server.js"
 compatibility_date = "2024-09-26"
 route = "https://api.heystak.io/*"
 
