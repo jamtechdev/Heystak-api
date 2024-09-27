@@ -13,7 +13,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Install Wrangler
+    - name: Install Node Modules
       run: npm install
 
     - name: Install Wrangler
