@@ -1,5 +1,7 @@
 name = "heystak-api"
+type = "javascript"
 main = "./server.js"
+workers_dev = true
 compatibility_date = "2024-09-26"
 route = "https://api.heystak.io/*"
 
