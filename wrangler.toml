@@ -2,3 +2,6 @@ name = "heystak-api"
 main = "src/index.ts"
 compatibility_date = "2024-09-26"
 route = "https://api.heystak.io/*"
+
+account_id = "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
+zone_id = "${{ secrets.CLOUDFLARE_ZONE_ID }}"

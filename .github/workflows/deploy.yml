@@ -3,20 +3,23 @@ name: Deploy to Cloudflare Workers
 on:
   push:
     branches:
-      - main
+      - main  # Trigger on the main branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Install dependencies
-        run: npm install
+    - name: Install Wrangler
+      run: npm install -g wrangler
 
-      - name: Install Wrangler
-        run: npm install -g wrangler
-
-      - name: Publish to Cloudflare Workers
-        run: wrangler publish
+    - name: Publish to Cloudflare Workers
+      env:
+        CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}  # Access API token
+        CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}  # Access Account ID
+      run: |
+        echo "Deploying to Cloudflare Workers"
+        wrangler publish --api-token $CF_API_TOKEN --account-id $CF_ACCOUNT_ID
