@@ -1,5 +1,6 @@
 name = "heystak-api"
 type = "javascript"
+output_format = "esm"  # Add this line
 main = "./server.js"
 workers_dev = true
 compatibility_date = "2024-09-26"
