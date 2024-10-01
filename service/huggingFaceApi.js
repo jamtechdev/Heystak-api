@@ -1,53 +1,56 @@
 import axios from "axios";
 import fs from "fs";
 import dotenv from "dotenv";
+import FormData from "form-data";  // Ensure you are using FormData for multipart form data
 
 dotenv.config();
 
-// Function to call Hugging Face API for transcription with timestamps
-export const callHuggingFaceApi = async (audioFilePath, apiKey) => {
-  // Read audio data from file
-  const audioData = fs.readFileSync(audioFilePath);
-
+// Function to call OpenAI API for transcription with Whisper model
+export const callOpenAiWhisperApi = async (audioFilePath, apiKey) => {
   try {
-    const response = await axios({
-      method: "post",
-      url: "https://api-inference.huggingface.co/models/openai/whisper-large-v3", // Model URL
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "audio/mp3", // Ensure correct format
-      },
-      data: audioData, // Send audio data in request body
-    });
-    console.log(response.data);
-    // Log the full response for debugging purposes (optional)
-    console.log("Full API Response:", response.data);
-    // Check if 'segments' are available in the API response (timestamps and text)
-    const segments = response.data.segments;
-    if (segments && segments.length > 0) {
-      // Map over segments and extract timestamps and transcription text
-      const transcriptionWithTimestamps = segments.map((segment) => ({
-        start: segment.start, // Start timestamp (seconds)
-        end: segment.end, // End timestamp (seconds)
-        text: segment.text, // Transcribed text for the segment
-      }));
+    // Create a form and append the audio file and model information
+    const formData = new FormData();
+    const audioFile = fs.createReadStream(audioFilePath); // Use a file stream for large files
 
-      return transcriptionWithTimestamps; // Return formatted transcription with timestamps
+    formData.append("file", audioFile);  // Attach the audio file to the request
+    formData.append("model", "whisper-1");  // Specify the Whisper model
+
+    // Set headers manually, as axios doesn't set them correctly with FormData
+    const headers = {
+      Authorization: `Bearer ${apiKey}`,
+      ...formData.getHeaders(),  // This is important to include the correct form-data headers
+    };
+
+    // Send the POST request to OpenAI API
+    const response = await axios.post(
+      "https://api.openai.com/v1/audio/transcriptions",
+      formData,
+      { headers }
+    );
+
+    // Log the response from OpenAI API
+    console.log("Full API Response:", response.data);
+
+    // Check if transcription is available
+    const transcriptionText = response.data.text;
+    if (transcriptionText) {
+      return [{ text: transcriptionText }];  // Return the transcribed text
     } else {
-      // Fallback: If segments are missing, return the plain transcription text
-      console.log("No segments found, returning plain transcription.");
-      return [{ text: response.data.text }];
+      console.log("No transcription found.");
+      return [{ text: "No transcription available." }];
     }
   } catch (error) {
-    // Enhanced error logging: Include HTTP status code, message, and response data if available
+    // Enhanced error logging
     if (error.response) {
       console.error(
-        `Error with Hugging Face API: ${error.response.status} - ${error.response.data.error}`
+        `Error with OpenAI Whisper API: ${error.response.status} - ${error.response.data.error.message}`
       );
     } else {
       console.error(`Error: ${error.message}`);
     }
-    // Re-throw error to be caught by the caller
-    throw new Error("Failed to process audio with Hugging Face API");
+    // Re-throw the error
+    throw new Error("Failed to process audio with OpenAI Whisper API");
   }
 };
+
+

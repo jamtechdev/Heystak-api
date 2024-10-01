@@ -1,6 +1,6 @@
 import express from "express";
 import { extractAudio } from "./audioExtractor.js";
-import { callHuggingFaceApi } from "./huggingFaceApi.js";
+import { callOpenAiWhisperApi } from "./huggingFaceApi.js";
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
@@ -40,6 +40,7 @@ router.post("/extract-text", async (req, res) => {
     generateTextOverlay,
   } = req.body;
   const huggingFaceApiKey = process.env.HUGGING_FACE_API_KEY; // Hugging Face API key from .env
+  const openAI_key = process.env.OPENAI_API_KEY;
 
   if (!videoUrl) {
     return res.status(400).json({ error: "No video URL provided" });
@@ -50,9 +51,9 @@ router.post("/extract-text", async (req, res) => {
     const outputAudioFile = await extractAudio(videoUrl);
 
     // Step 2: Send extracted audio to Hugging Face API and get transcription with timestamps
-    const transcription = await callHuggingFaceApi(
+    const transcription = await callOpenAiWhisperApi(
       outputAudioFile,
-      huggingFaceApiKey
+      openAI_key
     );
 
     const prompt = `
@@ -78,14 +79,6 @@ router.post("/extract-text", async (req, res) => {
       transcription, // Transcription with start/end times
       generatedScript: script, // Generated marketing script
     });
-    // // Step 3: Return the transcription text with timestamps and audio file path as the response
-    // res.status(200).json({
-    //   transcription, // Transcription with start/end times
-    //   audioFilePath: `/music/${path.basename(outputAudioFile)}`, // Provide path to the audio file
-    // });
-
-    // Step 4: Delete the audio file after the response
-    // fs.unlinkSync(outputAudioFile);
   } catch (error) {
     console.error("Error occurred:", error);
     res.status(500).json({ error: "Failed to process the video" });
