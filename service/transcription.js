@@ -6,8 +6,12 @@ import fs from "fs";
 import path from "path";
 import axios from "axios";
 import OpenAI from "openai";
+import cors from "cors";
 dotenv.config();
 const router = express.Router();
+router.use(express.json());
+router.use(express.urlencoded({ extended: true }));
+router.use(cors());
 router.get("/", (req, res) => {
   res.send("Hello, World!");
 });
