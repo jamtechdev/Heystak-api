@@ -13,7 +13,7 @@ router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
 router.use(cors());
 router.get("/", (req, res) => {
-  res.send("Hello, World!");
+  res.send("Hello, HeyStak!");
 });
 // POST endpoint to accept video URL and return transcription with timeline
 // POST endpoint to accept video URL and return transcription with timeline
