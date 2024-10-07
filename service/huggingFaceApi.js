@@ -33,6 +33,8 @@ export const callOpenAiWhisperApi = async (audioFilePath, apiKey) => {
 
     // Check if transcription is available
     const transcriptionText = response.data.text;
+    const segments = response.data.segments; 
+    console.log(segments,"timeline")
     if (transcriptionText) {
       return [{ text: transcriptionText }];  // Return the transcribed text
     } else {
