@@ -7,9 +7,12 @@ import transcriptionRoutes from "./service/transcription.js";
 const app = express();
 app.use(cors());
 app.use(express.json()); // Parse incoming JSON requests
-app.use('/generated_images', express.static(path.join(__dirname, 'generated_images')));
+app.use(
+  "/service/generated_images",
+  express.static(path.join(__dirname, "generated_images"))
+);
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded requests (if needed)
-app.use('/', transcriptionRoutes);
+app.use("/", transcriptionRoutes);
 app.listen(BASE_PORT, () => {
   logger.info(`Proxy server running at http://localhost:${BASE_PORT}`);
   startCronJobs();
