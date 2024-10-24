@@ -11,10 +11,8 @@ import transcriptionRoutes from "./service/transcription.js";
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(
-  "/service/generated_images",
-  express.static(path.join(__dirname, "generated_images"))
-);
+app.use('/generated_images', express.static(path.join(__dirname, 'generated_images')));
+
 app.use(express.urlencoded({ extended: true }));
 app.use("/", transcriptionRoutes);
 app.listen(BASE_PORT, () => {
