@@ -13,10 +13,7 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-router.use(
-  "/generated_images",
-  express.static(path.join(__dirname, "generated_images"))
-);
+
 
 const router = express.Router();
 router.use(express.json());
