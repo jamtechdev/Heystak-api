@@ -292,44 +292,49 @@ router.post("/generate-image", async (req, res) => {
     const { data } = req.body;
 
     if (!data || !Array.isArray(data)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid scenes data." });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid scenes data.",
+      });
     }
 
-    // Helper function to process each scene
     const processScene = async (scene) => {
-      const prompt = generatePromptForScene(scene);
-
-      // Step 1: Call OpenAI API to generate a detailed image description
-      const response = await openai.chat.completions.create({
-        model: "gpt-4",
-        messages: [{ role: "user", content: prompt }],
-      });
-
-      const generatedPrompt = response?.choices?.[0]?.message?.content;
-
-      // Step 2: Call Hugging Face API to generate an image from the text description
-      const imageFileName = await generateImageFromHuggingFace(
-        generatedPrompt,
-        scene.scene_number
-      );
-
-      // Return the result
-      return {
-        scene_number: scene.scene_number,
-        generated_prompt: generatedPrompt,
-        generated_image: `/generated_images/${imageFileName}`, // Path to the saved image
-      };
+      try {
+        const prompt = generatePromptForScene(scene);
+        const response = await openai.chat.completions.create({
+          model: "gpt-4",
+          messages: [{ role: "user", content: prompt }],
+        });
+        const generatedPrompt = response?.choices?.[0]?.message?.content;
+        if (!generatedPrompt) {
+          throw new Error("Failed to generate prompt from OpenAI.");
+        }
+        const imageFileName = await generateImageFromHuggingFace(
+          generatedPrompt,
+          scene.scene_number
+        );
+        return {
+          scene_number: scene.scene_number,
+          generated_prompt: generatedPrompt,
+          generated_image: `/generated_images/${imageFileName}`,
+        };
+      } catch (error) {
+        console.error(`Error processing scene ${scene.scene_number}:`, error);
+        return {
+          scene_number: scene.scene_number,
+          error: "Failed to process scene.",
+        };
+      }
     };
 
-    // Run all scenes processing in parallel
     const results = await Promise.all(data.map((scene) => processScene(scene)));
 
-    // Send the results back in the response
-    res.json({ success: true, storyboards: results });
+    res.json({
+      success: results.every((result) => !result.error),
+      storyboards: results,
+    });
   } catch (error) {
-    console.error("Error generating storyboard:", error);
+    console.error("Failed to generate storyboard and images:", error);
     res.status(500).json({
       success: false,
       error: "Failed to generate storyboard and images.",
