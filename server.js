@@ -4,10 +4,13 @@ import { BASE_PORT } from "./utlis/config.js";
 import { startCronJobs } from "./cronJobs.js";
 import logger from "./_helpers/logger.js";
 import path from "path";
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import transcriptionRoutes from "./service/transcription.js";
 const app = express();
 app.use(cors());
-app.use(express.json()); 
+app.use(express.json());
 app.use(
   "/service/generated_images",
   express.static(path.join(__dirname, "generated_images"))
