@@ -8,10 +8,13 @@ import cors from "cors";
 import axios from "axios";
 import path from "path";
 import { fileURLToPath } from "url";
+
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const router = express.Router();
+
+// CORS setup
 router.use(cors({ origin: "*", methods: "GET,POST,PUT,DELETE" }));
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
@@ -20,7 +23,9 @@ router.use(
   "/generated_images",
   express.static(path.join(__dirname, "generated_images"))
 );
+
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
 async function callOpenAITextGenerationAPI(prompt) {
   try {
     const response = await openai.chat.completions.create({
@@ -38,16 +43,18 @@ async function callOpenAITextGenerationAPI(prompt) {
     throw error;
   }
 }
+
 const CallToAction = [];
+
 function createScenesFromTranscription(transcriptionText) {
   const sentences = transcriptionText.split(". ");
-  console.log(CallToAction);
   return sentences.map((sentence, index) => ({
     scene_number: (index + 1).toString(),
     scene_type: CallToAction,
     script_copy: sentence.trim(),
   }));
 }
+
 function calculateWordCountAndDuration(scriptCopy) {
   const words = scriptCopy.split(" ").length;
   const speakingRate = { min: 130, max: 150 };
@@ -62,21 +69,15 @@ function calculateWordCountAndDuration(scriptCopy) {
     duration: `${formattedDurationMin} - ${formattedDurationMax}`,
   };
 }
+
 function formatDuration(decimalMinutes) {
   const totalSeconds = Math.floor(decimalMinutes * 60);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(
-    2,
-    "0"
-  )}`;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
-function parseGeneratedScript(
-  generatedScript,
-  company_name,
-  product_name,
-  target_audience
-) {
+
+function parseGeneratedScript(generatedScript, company_name, product_name, target_audience) {
   const scenes = generatedScript.split("\n\n").map((block, index) => {
     const lines = block.split("\n").filter((line) => line);
     const scriptCopyLine = lines.find((line) => line.includes("Script Copy:"));
@@ -103,14 +104,13 @@ function parseGeneratedScript(
     const { words, duration } = calculateWordCountAndDuration(scriptCopy);
     return {
       scene_number: (index + 1).toString(),
-      scene_type: intent, // Modify this based on your logic
+      scene_type: intent,
       script_copy: scriptCopy,
       action_description: actionDescription,
       text_overlay: textOverlay,
-      company_name: company_name,
-      product_name: product_name,
-      target_audience: target_audience,
-
+      company_name,
+      product_name,
+      target_audience,
       summary: {
         words: `${words} Words`,
         duration: `${duration} Duration`,
@@ -121,22 +121,20 @@ function parseGeneratedScript(
 
   return scenes;
 }
+
 function generatePromptForScene(scene) {
   return `
-    Using the provided Script Copy and action descriptions,productName, companyName,target_audiance,generate a storyboard by converting the scene into an image that aligns with the brand’s style and assets.
+    Using the provided Script Copy and action descriptions, generate a storyboard by converting the scene into an image that aligns with the brand’s style and assets.
 
     Scene Number: ${scene.scene_number}
-    productName:${scene.product_name}
-
-    companyName:${scene.company_name}
-    target_audiance:${scene.target_audiance}
+    Product Name: ${scene.product_name}
+    Company Name: ${scene.company_name}
+    Target Audience: ${scene.target_audience}
 
     Script Copy: "${scene.script_copy}"
-
     Action Description: "${scene.action_description}"
-
     Text Overlay: "${scene.text_overlay}"
-    give a summary of the scene
+
     The image should visually represent the action described, while incorporating the brand's visual identity, such as colors, product features, and tone.
   `;
 }
@@ -144,45 +142,48 @@ function generatePromptForScene(scene) {
 function saveImageToFolder(imageData, fileName) {
   const folderPath = path.join(__dirname, "generated_images");
 
-  // Ensure the folder exists
   if (!fs.existsSync(folderPath)) {
     fs.mkdirSync(folderPath);
   }
 
   const filePath = path.join(folderPath, fileName);
-
-  // Write the image to the folder
   fs.writeFileSync(filePath, imageData, "base64");
 
-  return fileName; // Return only the filename
+  return fileName;
 }
 
-// Helper function to call Hugging Face API for image generation
-async function generateImageFromHuggingFace(prompt, sceneNumber) {
+async function generateImageFromHuggingFace(prompt, sceneNumber, maxRetries = 5) {
   const huggingFaceApiKey = process.env.HUGGING_FACE_API_KEY;
 
-  try {
-    const response = await axios.post(
-      `https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev`,
-      { inputs: prompt },
-      {
-        headers: {
-          Authorization: `Bearer ${huggingFaceApiKey}`,
-        },
-        responseType: "arraybuffer", // For binary data (image)
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await axios.post(
+        `https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev`,
+        { inputs: prompt },
+        {
+          headers: {
+            Authorization: `Bearer ${huggingFaceApiKey}`,
+          },
+          responseType: "arraybuffer",
+        }
+      );
+
+      const base64Image = Buffer.from(response.data, "binary").toString("base64");
+      const fileName = `scene_${sceneNumber + new Date().getTime()}.png`;
+      return saveImageToFolder(base64Image, fileName);
+    } catch (error) {
+      if (error.response?.status === 429 && attempt < maxRetries - 1) {
+        const delay = Math.pow(2, attempt) * 1000;
+        console.log(`Rate limit reached. Retrying in ${delay / 1000} seconds...`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      } else {
+        console.error("Error generating image:", error);
+        throw error;
       }
-    );
-
-    // Convert the binary image to base64 and save it as a PNG file
-    const base64Image = Buffer.from(response.data, "binary").toString("base64");
-    const fileName = `scene_${sceneNumber + new Date().getTime()}.png`;
-
-    // Save the image to the local folder and return the filename
-    return saveImageToFolder(base64Image, fileName);
-  } catch (error) {
-    console.error("Error generating image:", error);
-    throw error;
+    }
   }
+
+  throw new Error("Failed to generate image after maximum retries.");
 }
 
 router.get("/", (req, res) => {
@@ -206,84 +207,49 @@ router.post("/extract-text", async (req, res) => {
   }
 
   try {
-    //Extract audio from video
     const outputAudioFile = await extractAudio(videoUrl);
-    // Call gpt api ket to extract text from audio file
-    const transcription = await callOpenAiWhisperApi(
-      outputAudioFile,
-      openAI_key
-    );
+    const transcription = await callOpenAiWhisperApi(outputAudioFile, openAI_key);
     const transcriptionText = transcription[0].text;
     const originalScenes = createScenesFromTranscription(transcriptionText);
     const numberOfScenes = originalScenes.length;
 
     const prompt = `
     Using the provided video transcription and brand details, generate a *completely new* script tailored to the company's brand assets. Ensure that the rewritten script remains simple, concise, and consistent across all sections. Avoid over-complicating or writing too much, but *do not copy the original text*.
-    
+
     The new script should express the same ideas but using fresh, original wording and phrasing.
-    
+
     Company Name: ${company_name}
     Product Name: ${product_name}
     Target Audience: ${target_audience}
     Language: ${language}
     Product Description: ${product_description}
     Transcription: ${transcriptionText}
-    
+
     Generate exactly ${numberOfScenes} scenes for this video, ensuring that each scene is **unique** and does not repeat any previous scene.
-    
-    For each scene, provide the following:
-    
-    1. Script Copy: *Rephrase the sentence* in a clear and concise manner, maintaining a consistent tone and message with the brand's identity. Use *new wording* and *avoid reusing phrases* from the original.
-    2. Action & Description: Describe what visual elements or scenes should be shown for this part of the script. The visual description should align with the brand and product messaging.
-    3. Text Overlay: Provide short and impactful on-screen text that reinforces the message without being wordy.
-    
-    **Intent Analysis:** 
-    For each sentence, provide a one-word summary that captures the primary intent or purpose of the message (e.g., "Tease," "Offer," "Call-to-action"). 
-    Ensure the one-word summaries are precise and aligned with the overall script structure.
-    
-    Guidelines:
-    - Ensure each scene feels distinct in its language from the original transcription.
-    - Keep the script copy short and impactful.
-    - Ensure all visual descriptions and text overlays are simple and aligned with the brand tone.
-    - Avoid unnecessary details or over-explanation.
-    - **Each scene should be distinct and provide new information or a new angle on the product.**
-    - Provide a one-word intent analysis for each sentence.
-
-
-    Using the provided Script Copy and action descriptions, generate a storyboard by converting each scene into images that align with the brand’s style and assets. The storyboard should visually represent the flow of the ad, using appropriate visuals for each action described in the script. Each image should correspond to a scene from the script, reflecting the actions, and incorporating brand assets.
     `;
 
-    console.log("prompt :-", prompt);
-    // Step 4: Call OpenAI API for script generation
     const generatedScript = await callOpenAITextGenerationAPI(prompt);
-    console.log("Generated Script :-", generatedScript);
-    // Parse the generated script into structured scenes
     const parsedGeneratedScript = parseGeneratedScript(
       generatedScript,
       company_name,
       product_name,
       target_audience
     );
-    // Step 5: Return the structured response
+
     res.status(200).json({
       original: { scenes: originalScenes },
       generated: { scenes: parsedGeneratedScript },
     });
 
-    // Clean up audio file after processing
     if (fs.existsSync(outputAudioFile)) {
       fs.unlinkSync(outputAudioFile);
     }
   } catch (error) {
     console.error("Error occurred:", error);
     res.status(500).json({ error: "Failed to process the video" });
-
-    // Ensure the file is deleted in case of an error
-    if (fs.existsSync(outputAudioFile)) {
-      fs.unlinkSync(outputAudioFile);
-    }
   }
 });
+
 router.post("/generate-image", async (req, res) => {
   try {
     const { data } = req.body;
@@ -306,10 +272,12 @@ router.post("/generate-image", async (req, res) => {
         if (!generatedPrompt) {
           throw new Error("Failed to generate prompt from OpenAI.");
         }
+
         const imageFileName = await generateImageFromHuggingFace(
           generatedPrompt,
           scene.scene_number
         );
+
         return {
           scene_number: scene.scene_number,
           generated_prompt: generatedPrompt,
