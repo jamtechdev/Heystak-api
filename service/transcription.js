@@ -204,55 +204,6 @@ async function generateImageFromHuggingFace(
 }
 
 /**
- * Helper function to generate an image from Hugging Face API with retry logic.
- * @param {string} prompt - Prompt for generating the image.
- * @param {number} sceneNumber - Scene number for naming the image file.
- * @param {number} maxRetries - Maximum number of retries.
- * @returns {Promise<string>} - File name of the generated image.
- */
-async function generateImageFromHuggingFace(
-  prompt,
-  sceneNumber,
-  maxRetries = MAX_RETRIES
-) {
-  const huggingFaceApiKey = process.env.HUGGING_FACE_API_KEY;
-
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      const response = await axios.post(
-        HUGGING_FACE_MODEL_URL,
-        { inputs: prompt },
-        {
-          headers: {
-            Authorization: `Bearer ${huggingFaceApiKey}`,
-          },
-          responseType: "arraybuffer",
-        }
-      );
-
-      const base64Image = Buffer.from(response.data, "binary").toString(
-        "base64"
-      );
-      const fileName = `scene_${sceneNumber}_${Date.now()}.png`;
-      return saveImageToFolder(base64Image, fileName);
-    } catch (error) {
-      if (error.response?.status === 429 && attempt < maxRetries - 1) {
-        const delayTime = Math.pow(2, attempt) * DELAY_BETWEEN_RETRIES;
-        console.log(
-          `Rate limit reached. Retrying in ${delayTime / 1000} seconds...`
-        );
-        await new Promise((resolve) => setTimeout(resolve, delayTime));
-      } else {
-        console.error("Error generating image:", error.message);
-        throw error;
-      }
-    }
-  }
-
-  throw new Error("Failed to generate image after maximum retries.");
-}
-
-/**
  * Helper function to process a single scene and generate an image.
  * @param {Object} scene - The scene object containing details.
  * @returns {Promise<Object>} - Result object containing scene info and image file name.
@@ -261,24 +212,20 @@ async function processScene(scene) {
   try {
     // Generate the prompt for the scene
     const prompt = generatePromptForScene(scene);
-
     // Call OpenAI to generate an image prompt
     const response = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [{ role: "user", content: prompt }],
     });
-
     const generatedPrompt = response?.choices?.[0]?.message?.content;
     if (!generatedPrompt) {
       throw new Error("Failed to generate prompt from OpenAI.");
     }
-
     // Call Hugging Face to generate the image
     const imageFileName = await generateImageFromHuggingFace(
       generatedPrompt,
       scene.scene_number
     );
-
     return {
       scene_number: scene.scene_number,
       generated_prompt: generatedPrompt,
@@ -364,9 +311,7 @@ router.post("/generate-image", async (req, res) => {
         message: "Invalid scenes data.",
       });
     }
-
     const results = [];
-
     // Process scenes one-by-one (sequentially)
     for (const scene of data) {
       const result = await processScene(scene);
@@ -375,7 +320,6 @@ router.post("/generate-image", async (req, res) => {
       // Optional: Add a delay between scenes to avoid potential rate limits
       await new Promise((resolve) => setTimeout(resolve, 500)); // 0.5-second delay
     }
-
     res.json({
       success: results.every((result) => !result.error),
       storyboards: results,
