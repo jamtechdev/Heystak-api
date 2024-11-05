@@ -105,6 +105,9 @@ function parseGeneratedScript(
     const textOverlayLine = lines.find((line) =>
       line.includes("Text Overlay:")
     );
+    const imageDescriptionLine = lines.find((line) =>
+      line.includes("Image Description:")
+    );
     const textOverlay = textOverlayLine
       ? textOverlayLine.replace("Text Overlay:", "").trim()
       : "No overlay available";
@@ -120,6 +123,7 @@ function parseGeneratedScript(
       script_copy: scriptCopy,
       action_description: actionDescription,
       text_overlay: textOverlay,
+      imageDescriptionLine: imageDescriptionLine,
       company_name,
       product_name,
       target_audience,
@@ -171,7 +175,7 @@ async function generateImageFromHuggingFace(
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const response = await axios.post(
-        `https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev`,
+        `https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell`,
         { inputs: prompt },
         {
           headers: {
@@ -210,25 +214,13 @@ async function generateImageFromHuggingFace(
  */
 async function processScene(scene) {
   try {
-    // Generate the prompt for the scene
-    const prompt = generatePromptForScene(scene);
-    // Call OpenAI to generate an image prompt
-    const response = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [{ role: "user", content: prompt }],
-    });
-    const generatedPrompt = response?.choices?.[0]?.message?.content;
-    if (!generatedPrompt) {
-      throw new Error("Failed to generate prompt from OpenAI.");
-    }
-    // Call Hugging Face to generate the image
     const imageFileName = await generateImageFromHuggingFace(
-      generatedPrompt,
-      scene.scene_number
+      scene?.imageDescription,
+      scene.sceneNumber
     );
     return {
-      scene_number: scene.scene_number,
-      generated_prompt: generatedPrompt,
+      scene_number: scene.sceneNumber,
+      generated_prompt: scene?.imageDescription,
       generated_image: `/generated_images/${imageFileName}`,
     };
   } catch (error) {
@@ -242,6 +234,16 @@ async function processScene(scene) {
     };
   }
 }
+// extract only Image Description
+function getImageDescriptionsOnly(scenes) {
+  return scenes.map((scene) => ({
+    sceneNumber: scene.scene_number,
+    imageDescription: scene.imageDescriptionLine
+      .replace("- Image Description: ", "")
+      .trim(),
+  }));
+}
+
 router.get("/", (req, res) => {
   res.json({ message: "Welcome to the transcription service" });
 });
@@ -266,23 +268,48 @@ router.post("/extract-text", async (req, res) => {
     );
     const transcriptionText = transcription[0].text;
     const originalScenes = createScenesFromTranscription(transcriptionText);
-    const numberOfScenes = originalScenes.length;
+    const numberOfScenes = originalScenes.slice(0, 5).length;
 
     const prompt = `
     Using the provided video transcription and brand details, generate a *completely new* script tailored to the company's brand assets. Ensure that the rewritten script remains simple, concise, and consistent across all sections. Avoid over-complicating or writing too much, but *do not copy the original text*.
-
+    
     The new script should express the same ideas but using fresh, original wording and phrasing.
-
+    
     Company Name: ${company_name}
     Product Name: ${product_name}
     Target Audience: ${target_audience}
     Language: ${language}
     Product Description: ${product_description}
     Transcription: ${transcriptionText}
-
+    
     Generate exactly ${numberOfScenes} scenes for this video, ensuring that each scene is **unique** and does not repeat any previous scene.
+    
+    For each scene, provide the following:
+    
+    1. Script Copy: *Rephrase the sentence* in a clear and concise manner, maintaining a consistent tone and message with the brand's identity. Use *new wording* and *avoid reusing phrases* from the original.
+    2. Action & Description: Describe what visual elements or scenes should be shown for this part of the script. The visual description should align with the brand and product messaging.
+    3. Text Overlay: Provide short and impactful on-screen text that reinforces the message without being wordy.
+    4. Image Description : 'Using the provided script copy and action descriptions, generate a storyboard image by converting the scene into an image that aligns with the brand’s style and assets.
+    The image should visually represent the action described, while incorporating the brand's visual identity, such as colors, product features, and tone'.
+    
+    
+    **Intent Analysis:** 
+    For each sentence, provide a one-word summary that captures the primary intent or purpose of the message (e.g., "Tease," "Offer," "Call-to-action"). 
+    Ensure the one-word summaries are precise and aligned with the overall script structure.
+    
+    Guidelines:
+    - Ensure each scene feels distinct in its language from the original transcription.
+    - Keep the script copy short and impactful.
+    - Ensure all visual descriptions and text overlays are simple and aligned with the brand tone.
+    - Avoid unnecessary details or over-explanation.
+    - **Each scene should be distinct and provide new information or a new angle on the product.**
+    - Provide a one-word intent analysis for each sentence.
+
+
+    Using the provided Script Copy and action descriptions, generate a storyboard by converting each scene into images that align with the brand’s style and assets. The storyboard should visually represent the flow of the ad, using appropriate visuals for each action described in the script. Each image should correspond to a scene from the script, reflecting the actions, and incorporating brand assets.
     `;
     const generatedScript = await callOpenAITextGenerationAPI(prompt);
+    console.log(generatedScript);
     const parsedGeneratedScript = parseGeneratedScript(
       generatedScript,
       company_name,
@@ -305,6 +332,7 @@ router.post("/extract-text", async (req, res) => {
 router.post("/generate-image", async (req, res) => {
   try {
     const { data } = req.body;
+    const imageDescriptions = getImageDescriptionsOnly(data);
     if (!data || !Array.isArray(data)) {
       return res.status(400).json({
         success: false,
@@ -313,11 +341,9 @@ router.post("/generate-image", async (req, res) => {
     }
     const results = [];
     // Process scenes one-by-one (sequentially)
-    for (const scene of data) {
+    for (const scene of imageDescriptions) {
       const result = await processScene(scene);
       results.push(result);
-
-      // Optional: Add a delay between scenes to avoid potential rate limits
       await new Promise((resolve) => setTimeout(resolve, 500)); // 0.5-second delay
     }
     res.json({
