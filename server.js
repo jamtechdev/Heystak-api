@@ -18,5 +18,5 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/", transcriptionRoutes);
 app.listen(BASE_PORT, () => {
   logger.info(`Proxy server running at http://localhost:${BASE_PORT}`);
-  startCronJobs();
+  // startCronJobs();
 });

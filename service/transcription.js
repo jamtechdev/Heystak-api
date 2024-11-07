@@ -309,7 +309,7 @@ router.post("/extract-text", async (req, res) => {
     Using the provided Script Copy and action descriptions, generate a storyboard by converting each scene into images that align with the brand’s style and assets. The storyboard should visually represent the flow of the ad, using appropriate visuals for each action described in the script. Each image should correspond to a scene from the script, reflecting the actions, and incorporating brand assets.
     `;
     const generatedScript = await callOpenAITextGenerationAPI(prompt);
-    console.log(generatedScript);
+    // console.log(generatedScript);
     const parsedGeneratedScript = parseGeneratedScript(
       generatedScript,
       company_name,
