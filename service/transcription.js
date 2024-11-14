@@ -175,7 +175,7 @@ async function generateImageFromHuggingFace(
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const response = await axios.post(
-        `https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell`,
+        HUGGING_FACE_MODEL_URL,
         { inputs: prompt },
         {
           headers: {
@@ -259,7 +259,8 @@ router.post("/extract-text", async (req, res) => {
   const openAI_key = process.env.OPENAI_API_KEY;
   if (!videoUrl) {
     return res.status(400).json({ error: "No video URL provided" });
-  }
+  }as
+  console.log("videoUrl", videoUrl);
   try {
     const outputAudioFile = await extractAudio(videoUrl);
     const transcription = await callOpenAiWhisperApi(
