@@ -259,7 +259,7 @@ router.post("/extract-text", async (req, res) => {
   const openAI_key = process.env.OPENAI_API_KEY;
   if (!videoUrl) {
     return res.status(400).json({ error: "No video URL provided" });
-  }as
+  }
   console.log("videoUrl", videoUrl);
   try {
     const outputAudioFile = await extractAudio(videoUrl);
