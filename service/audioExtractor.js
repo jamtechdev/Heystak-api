@@ -21,9 +21,9 @@ export const extractAudio = (videoUrl) => {
         ffmpeg(videoUrl)
             .outputOptions([
                 '-max_muxing_queue_size 1024',
-                '-maxrate 2M',
-                '-bufsize 2M',
-                '-memory_limit 512M'
+                '-maxrate 250M',
+                '-bufsize 250M',
+              
             ])
             .noVideo()
             .audioCodec('libmp3lame')
