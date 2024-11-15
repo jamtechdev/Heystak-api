@@ -19,11 +19,34 @@ export const extractAudio = (videoUrl) => {
         const outputFilePath = path.resolve(musicFolder, outputAudioFileName);
 
         ffmpeg(videoUrl)
-            .noVideo() // Disable video stream
-            .audioCodec('libmp3lame') // Use mp3 codec
-            .format('mp3') // Output format
-            .on('end', () => resolve(outputFilePath))
-            .on('error', (err) => reject(err))
-            .save(outputFilePath); // Save audio file
+            .outputOptions([
+                '-max_muxing_queue_size 1024',
+                '-maxrate 2M',
+                '-bufsize 2M',
+                '-memory_limit 512M'
+            ])
+            .noVideo()
+            .audioCodec('libmp3lame')
+            .format('mp3')
+            .on('start', (command) => {
+                console.log('FFmpeg process started:', command);
+            })
+            .on('progress', (progress) => {
+                console.log('Processing: ' + progress.percent + '% done');
+            })
+            .on('end', () => {
+                console.log('Audio extraction completed');
+                resolve(outputFilePath);
+            })
+            .on('error', (err) => {
+                console.error('FFmpeg error:', err);
+                reject(err);
+            })
+            .save(outputFilePath);
     });
 };
+
+// Usage example:
+// extractAudio('path/to/your/video.mp4')
+//     .then(outputPath => console.log('Audio saved to:', outputPath))
+//     .catch(err => console.error('Error:', err));
