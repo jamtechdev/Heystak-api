@@ -19,30 +19,11 @@ export const extractAudio = (videoUrl) => {
         const outputFilePath = path.resolve(musicFolder, outputAudioFileName);
 
         ffmpeg(videoUrl)
-            .outputOptions([
-                '-max_muxing_queue_size 1024',
-                '-threads 4',           // Limit threads
-                '-preset fast',         // Use faster encoding
-                '-movflags faststart'   // Enable fast start
-            ])
-            .noVideo()
-            .audioCodec('libmp3lame')
-            .audioBitrate('128k')      // Set a reasonable bitrate
-            .format('mp3')
-            .on('start', (command) => {
-                console.log('FFmpeg process started:', command);
-            })
-            .on('progress', (progress) => {
-                console.log('Processing: ' + progress.percent + '% done');
-            })
-            .on('end', () => {
-                console.log('Audio extraction completed');
-                resolve(outputFilePath);
-            })
-            .on('error', (err) => {
-                console.error('FFmpeg error:', err);
-                reject(err);
-            })
+            .noVideo() 
+            .audioCodec('libmp3lame') 
+            .format('mp3') 
+            .on('end', () => resolve(outputFilePath))
+            .on('error', (err) => reject(err))
             .save(outputFilePath);
     });
 };
