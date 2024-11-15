@@ -1,5 +1,5 @@
 import express from "express";
-import { extractAudio } from "./audioExtractor.js";
+import { extractAudio, processVideoUrl } from "./audioExtractor.js";
 import { callOpenAiWhisperApi } from "./huggingFaceApi.js";
 import dotenv from "dotenv";
 import fs from "fs";
@@ -262,69 +262,76 @@ router.post("/extract-text", async (req, res) => {
   }
   console.log("videoUrl", videoUrl);
   try {
-    const outputAudioFile = await extractAudio(videoUrl);
-    const transcription = await callOpenAiWhisperApi(
-      outputAudioFile,
-      openAI_key
-    );
-    const transcriptionText = transcription[0].text;
-    const originalScenes = createScenesFromTranscription(transcriptionText);
-    const numberOfScenes = originalScenes.slice(0, 5).length;
+    // const outputAudioFile = await extractAudio(videoUrl);
+    processVideoUrl(videoUrl)
+      .then((result) => {
+        console.log("Output file details:", result);
+      })
+      .catch((err) => {
+        console.error("Failed to process video:", err);
+      });
+    res.status(200).json({ success: true });
 
-    const prompt = `
-    Using the provided video transcription and brand details, generate a *completely new* script tailored to the company's brand assets. Ensure that the rewritten script remains simple, concise, and consistent across all sections. Avoid over-complicating or writing too much, but *do not copy the original text*.
-    
-    The new script should express the same ideas but using fresh, original wording and phrasing.
-    
-    Company Name: ${company_name}
-    Product Name: ${product_name}
-    Target Audience: ${target_audience}
-    Language: ${language}
-    Product Description: ${product_description}
-    Transcription: ${transcriptionText}
-    
-    Generate exactly ${numberOfScenes} scenes for this video, ensuring that each scene is **unique** and does not repeat any previous scene.
-    
-    For each scene, provide the following:
-    
-    1. Script Copy: *Rephrase the sentence* in a clear and concise manner, maintaining a consistent tone and message with the brand's identity. Use *new wording* and *avoid reusing phrases* from the original.
-    2. Action & Description: Describe what visual elements or scenes should be shown for this part of the script. The visual description should align with the brand and product messaging.
-    3. Text Overlay: Provide short and impactful on-screen text that reinforces the message without being wordy.
-    4. Image Description : 'Using the provided script copy and action descriptions, generate a storyboard image by converting the scene into an image that aligns with the brand’s style and assets.
-    The image should visually represent the action described, while incorporating the brand's visual identity, such as colors, product features, and tone'.
-    
-    
-    **Intent Analysis:** 
-    For each sentence, provide a one-word summary that captures the primary intent or purpose of the message (e.g., "Tease," "Offer," "Call-to-action"). 
-    Ensure the one-word summaries are precise and aligned with the overall script structure.
-    
-    Guidelines:
-    - Ensure each scene feels distinct in its language from the original transcription.
-    - Keep the script copy short and impactful.
-    - Ensure all visual descriptions and text overlays are simple and aligned with the brand tone.
-    - Avoid unnecessary details or over-explanation.
-    - **Each scene should be distinct and provide new information or a new angle on the product.**
-    - Provide a one-word intent analysis for each sentence.
+    // const transcription = await callOpenAiWhisperApi(
+    //   outputAudioFile,
+    //   openAI_key
+    // );
+    // const transcriptionText = transcription[0].text;
+    // const originalScenes = createScenesFromTranscription(transcriptionText);
+    // const numberOfScenes = originalScenes.slice(0, 5).length;
 
+    // const prompt = `
+    // Using the provided video transcription and brand details, generate a *completely new* script tailored to the company's brand assets. Ensure that the rewritten script remains simple, concise, and consistent across all sections. Avoid over-complicating or writing too much, but *do not copy the original text*.
 
-    Using the provided Script Copy and action descriptions, generate a storyboard by converting each scene into images that align with the brand’s style and assets. The storyboard should visually represent the flow of the ad, using appropriate visuals for each action described in the script. Each image should correspond to a scene from the script, reflecting the actions, and incorporating brand assets.
-    `;
-    const generatedScript = await callOpenAITextGenerationAPI(prompt);
+    // The new script should express the same ideas but using fresh, original wording and phrasing.
+
+    // Company Name: ${company_name}
+    // Product Name: ${product_name}
+    // Target Audience: ${target_audience}
+    // Language: ${language}
+    // Product Description: ${product_description}
+    // Transcription: ${transcriptionText}
+
+    // Generate exactly ${numberOfScenes} scenes for this video, ensuring that each scene is **unique** and does not repeat any previous scene.
+
+    // For each scene, provide the following:
+
+    // 1. Script Copy: *Rephrase the sentence* in a clear and concise manner, maintaining a consistent tone and message with the brand's identity. Use *new wording* and *avoid reusing phrases* from the original.
+    // 2. Action & Description: Describe what visual elements or scenes should be shown for this part of the script. The visual description should align with the brand and product messaging.
+    // 3. Text Overlay: Provide short and impactful on-screen text that reinforces the message without being wordy.
+    // 4. Image Description : 'Using the provided script copy and action descriptions, generate a storyboard image by converting the scene into an image that aligns with the brand’s style and assets.
+    // The image should visually represent the action described, while incorporating the brand's visual identity, such as colors, product features, and tone'.
+
+    // **Intent Analysis:**
+    // For each sentence, provide a one-word summary that captures the primary intent or purpose of the message (e.g., "Tease," "Offer," "Call-to-action").
+    // Ensure the one-word summaries are precise and aligned with the overall script structure.
+
+    // Guidelines:
+    // - Ensure each scene feels distinct in its language from the original transcription.
+    // - Keep the script copy short and impactful.
+    // - Ensure all visual descriptions and text overlays are simple and aligned with the brand tone.
+    // - Avoid unnecessary details or over-explanation.
+    // - **Each scene should be distinct and provide new information or a new angle on the product.**
+    // - Provide a one-word intent analysis for each sentence.
+
+    // Using the provided Script Copy and action descriptions, generate a storyboard by converting each scene into images that align with the brand’s style and assets. The storyboard should visually represent the flow of the ad, using appropriate visuals for each action described in the script. Each image should correspond to a scene from the script, reflecting the actions, and incorporating brand assets.
+    // `;
+    // const generatedScript = await callOpenAITextGenerationAPI(prompt);
     // console.log(generatedScript);
-    const parsedGeneratedScript = parseGeneratedScript(
-      generatedScript,
-      company_name,
-      product_name,
-      target_audience
-    );
-    res.status(200).json({
-      original: { scenes: originalScenes },
-      generated: { scenes: parsedGeneratedScript },
-    });
+    // const parsedGeneratedScript = parseGeneratedScript(
+    //   generatedScript,
+    //   company_name,
+    //   product_name,
+    //   target_audience
+    // );
+    // res.status(200).json({
+    //   original: { scenes: originalScenes },
+    //   generated: { scenes: parsedGeneratedScript },
+    // });
 
-    if (fs.existsSync(outputAudioFile)) {
-      fs.unlinkSync(outputAudioFile);
-    }
+    // if (fs.existsSync(outputAudioFile)) {
+    //   fs.unlinkSync(outputAudioFile);
+    // }
   } catch (error) {
     console.error("Error occurred:", error);
     res.status(500).json({ error: "Failed to process the video" });
