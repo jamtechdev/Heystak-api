@@ -1,5 +1,5 @@
 import express from "express";
-import { extractAudio, processVideoUrl } from "./audioExtractor.js";
+import {processVideoUrl } from "./audioExtractor.js";
 import { callOpenAiWhisperApi } from "./huggingFaceApi.js";
 import dotenv from "dotenv";
 import fs from "fs";
