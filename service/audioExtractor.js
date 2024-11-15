@@ -21,12 +21,13 @@ export const extractAudio = (videoUrl) => {
         ffmpeg(videoUrl)
             .outputOptions([
                 '-max_muxing_queue_size 1024',
-                '-maxrate 250M',
-                '-bufsize 250M',
-              
+                '-threads 4',           // Limit threads
+                '-preset fast',         // Use faster encoding
+                '-movflags faststart'   // Enable fast start
             ])
             .noVideo()
             .audioCodec('libmp3lame')
+            .audioBitrate('128k')      // Set a reasonable bitrate
             .format('mp3')
             .on('start', (command) => {
                 console.log('FFmpeg process started:', command);
@@ -45,8 +46,3 @@ export const extractAudio = (videoUrl) => {
             .save(outputFilePath);
     });
 };
-
-// Usage example:
-// extractAudio('path/to/your/video.mp4')
-//     .then(outputPath => console.log('Audio saved to:', outputPath))
-//     .catch(err => console.error('Error:', err));
