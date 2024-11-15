@@ -168,7 +168,7 @@ function saveImageToFolder(imageData, fileName) {
 async function generateImageFromHuggingFace(
   prompt,
   sceneNumber,
-  maxRetries = 5
+  maxRetries = 3
 ) {
   const huggingFaceApiKey = process.env.HUGGING_FACE_API_KEY;
 
