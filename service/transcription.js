@@ -1,5 +1,5 @@
 import express from "express";
-import {processVideoUrl } from "./audioExtractor.js";
+import { processVideoUrl } from "./audioExtractor.js";
 import { callOpenAiWhisperApi } from "./huggingFaceApi.js";
 import dotenv from "dotenv";
 import fs from "fs";
@@ -8,6 +8,8 @@ import cors from "cors";
 import axios from "axios";
 import path from "path";
 import { fileURLToPath } from "url";
+import { Authenticate } from "../Middleware/Authenticate.js";
+import { adTrackerController } from "../Controller/ScrapController/ScrapController.js";
 
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
@@ -22,6 +24,10 @@ router.use(
   "/generated_images",
   express.static(path.join(__dirname, "generated_images"))
 );
+router.use((req, res, next) => {
+  console.log(`Incoming request: ${req.method} ${req.path}`);
+  next();
+});
 
 const HUGGING_FACE_MODEL_URL =
   "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell";
@@ -206,7 +212,6 @@ async function generateImageFromHuggingFace(
 
   throw new Error("Failed to generate image after maximum retries.");
 }
-
 /**
  * Helper function to process a single scene and generate an image.
  * @param {Object} scene - The scene object containing details.
@@ -243,7 +248,6 @@ function getImageDescriptionsOnly(scenes) {
       .trim(),
   }));
 }
-
 router.get("/", (req, res) => {
   res.json({ message: "Welcome to the transcription service" });
 });
@@ -264,7 +268,7 @@ router.post("/extract-text", async (req, res) => {
   try {
     const outputAudioFile = await processVideoUrl(videoUrl);
     console.log("outputAudioFile", outputAudioFile);
-    
+
     const transcription = await callOpenAiWhisperApi(
       outputAudioFile,
       openAI_key
@@ -359,4 +363,5 @@ router.post("/generate-image", async (req, res) => {
     });
   }
 });
+router.post("/ad-tracker", Authenticate, adTrackerController?.trackAd);
 export default router;

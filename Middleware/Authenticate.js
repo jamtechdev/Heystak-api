@@ -1,29 +1,28 @@
-// middleware/authenticate.js
-const jwt = require("jsonwebtoken");
+// Import dependencies
+import jwt from 'jsonwebtoken';
+import { generateToken } from './Generate.js';
 
-// Secret key for verifying JWTs
+// Load environment variables
 const SECRET_KEY = process.env.JWT_SECRET;
 
-const authenticate = (req, res, next) => {
-  // Get the token from the request headers
+export const Authenticate = (req, res, next) => {
   const token = req.headers["authorization"];
-
   if (!token) {
     return res.status(403).json({ error: "No token provided" });
   }
 
-  // Verify the token
   jwt.verify(token.split(" ")[1], SECRET_KEY, (err, decoded) => {
     if (err) {
+      // Check if the error is due to token expiration
+      if (err.name === 'TokenExpiredError') {
+        // Optionally generate a new token if the old one expired
+        const newToken = generateToken({ id: decoded.id, email: decoded.email });
+        res.setHeader('Authorization', `Bearer ${newToken}`);
+      }
       return res.status(401).json({ error: "Unauthorized access" });
     }
 
-    // If the token is valid, attach the decoded payload to the request object
     req.user = decoded;
-
-    // Proceed to the next middleware or route handler
     next();
   });
 };
-
-module.exports = authenticate;
