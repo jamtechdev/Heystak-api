@@ -365,3 +365,4 @@ router.post("/generate-image", async (req, res) => {
 });
 router.post("/ad-tracker", Authenticate, adTrackerController?.trackAd);
 export default router;
+
