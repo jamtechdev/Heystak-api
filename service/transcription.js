@@ -249,7 +249,7 @@ function getImageDescriptionsOnly(scenes) {
   }));
 }
 router.get("/", (req, res) => {
-  res.json({ message: "Welcome to the transcription service" });
+  res.send("Hello, World!");
 });
 router.post("/extract-text", async (req, res) => {
   const {
