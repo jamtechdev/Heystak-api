@@ -28,7 +28,6 @@ router.use((req, res, next) => {
   console.log(`Incoming request: ${req.method} ${req.path}`);
   next();
 });
-
 const HUGGING_FACE_MODEL_URL =
   "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell";
 const MAX_RETRIES = 5;
@@ -365,4 +364,3 @@ router.post("/generate-image", async (req, res) => {
 });
 router.post("/ad-tracker", Authenticate, adTrackerController?.trackAd);
 export default router;
-

@@ -40,7 +40,7 @@ const adTrackerController = {
           url: adId,
         },
       ],
-      count: 50,
+      count: 200,
       "scrapePageAds.activeStatus": "all",
       period: "",
     };
