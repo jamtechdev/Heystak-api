@@ -31,8 +31,7 @@ router.use((req, res, next) => {
 const HUGGING_FACE_MODEL_URL =
   "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell";
 const MAX_RETRIES = 5;
-const DELAY_BETWEEN_RETRIES = 2000; // 2 seconds delay between retries
-// OpenAI API initialization
+const DELAY_BETWEEN_RETRIES = 2000; 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 // Serve static files from the "generated_images" folder
 router.use(express.static(path.join(__dirname, "generated_images")));
@@ -363,4 +362,5 @@ router.post("/generate-image", async (req, res) => {
   }
 });
 router.post("/ad-tracker", Authenticate, adTrackerController?.trackAd);
+router.post("/upload-media", Authenticate, adTrackerController.getAd);
 export default router;
