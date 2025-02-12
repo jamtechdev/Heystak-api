@@ -31,7 +31,7 @@ router.use((req, res, next) => {
 const HUGGING_FACE_MODEL_URL =
   "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell";
 const MAX_RETRIES = 5;
-const DELAY_BETWEEN_RETRIES = 2000; 
+const DELAY_BETWEEN_RETRIES = 2000;
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 // Serve static files from the "generated_images" folder
 router.use(express.static(path.join(__dirname, "generated_images")));
