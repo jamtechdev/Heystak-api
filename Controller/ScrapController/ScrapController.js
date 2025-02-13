@@ -191,9 +191,7 @@ const uploadAsset = async (assetUrl, mediaType) => {
 
     if (uploadError) {
       console.error(" Supabase Upload Error:", uploadError.message);
-      return res
-        .status(500)
-        .json({ error: "Failed to upload media to Supabase" });
+      return { error: uploadError };
     }
     console.log(` File uploaded to Supabase: ${uploadedFile}`);
     fs.unlinkSync(filePath);
