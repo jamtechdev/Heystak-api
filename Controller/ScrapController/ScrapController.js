@@ -190,12 +190,12 @@ const uploadAsset = async (assetUrl, mediaType) => {
       });
 
     if (uploadError) {
-      console.error("❌ Supabase Upload Error:", uploadError.message);
+      console.error(" Supabase Upload Error:", uploadError.message);
       return res
         .status(500)
         .json({ error: "Failed to upload media to Supabase" });
     }
-    console.log(`✅ File uploaded to Supabase: ${uploadedFile}`);
+    console.log(` File uploaded to Supabase: ${uploadedFile}`);
     fs.unlinkSync(filePath);
     return {
       contentType,
@@ -598,7 +598,7 @@ const adTrackerController = {
             const parsedData = parseFacebookAdLibraryRequest(adItem, {
               categories,
             });
-            console.log(parsedData, "Parsed Data");
+            // console.log(parsedData, "Parsed Data");
 
             let assetsUploded = [];
             let logoResults = [];
@@ -654,7 +654,7 @@ const adTrackerController = {
               }
             }
 
-            console.log(assetsUploded);
+            // console.log(assetsUploded);
 
             return { parsedData, assetsUploded, logoResults };
           })
@@ -671,18 +671,18 @@ const adTrackerController = {
             });
 
           if (error) {
-            console.error("❌ Supabase Insert Error:", error.message);
+            console.error("Supabase Insert Error:", error.message);
             return res
               .status(500)
               .json({ error: "Failed to insert ad data to Supabase" });
           }
 
           if (response) {
-            console.log("✅ Ad data inserted successfully");
+            console.log("Ad data inserted successfully");
             return res.status(200).json({ success: true });
           }
         }
-        
+
         // console.log(results, "hellows");
       }
     })();
@@ -721,16 +721,16 @@ const adTrackerController = {
         });
 
       if (uploadError) {
-        console.error("❌ Supabase Upload Error:", uploadError.message);
+        console.error(" Supabase Upload Error:", uploadError.message);
         return res
           .status(500)
           .json({ error: "Failed to upload media to Supabase" });
       }
       // const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/${fileName}`;
-      console.log(`✅ File uploaded to Supabase: ${uploadedFile}`);
+      console.log(` File uploaded to Supabase: ${uploadedFile}`);
       fs.unlinkSync(filePath);
       console.log(
-        `✅ ${isVideo ? "Video" : "Image"} downloaded successfully: ${filePath}`
+        ` ${isVideo ? "Video" : "Image"} downloaded successfully: ${filePath}`
       );
 
       return res.status(200).json({
@@ -739,7 +739,7 @@ const adTrackerController = {
         media_type: mediaType,
       });
     } catch (error) {
-      console.error("❌ Error downloading media:", error.message);
+      console.error(" Error downloading media:", error.message);
       return null;
     }
   },
