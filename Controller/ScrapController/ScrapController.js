@@ -559,7 +559,6 @@ const adTrackerController = {
           url: adId,
         },
       ],
-      count: 50,
       "scrapePageAds.activeStatus": "all",
       period: "",
     };
@@ -657,7 +656,13 @@ const adTrackerController = {
             return { parsedData, assetsUploded, logoResults };
           })
         );
+
         if (results && results.length > 0) {
+          const assetsUploded = results.flatMap((item) => item.assetsUploded);
+          const logoResult = results[0]?.logoResults || null; // Get only the first logo result
+          const brandName = results[0]?.parsedData?.brand?.name || ""; // Get only the first brand name
+          console.log();
+
           const { data: response, error } = await supabase
             .from("ad_tracker")
             .insert({
@@ -665,7 +670,9 @@ const adTrackerController = {
               folder_id: folderId,
               user_id: userId,
               facebook_view_data: results,
-              assets: results?.assetsUploded,
+              assets: assetsUploded,
+              name: brandName,
+              brand_image: logoResult,
             });
 
           if (error) {
@@ -680,6 +687,7 @@ const adTrackerController = {
             return res.status(200).json({ success: true });
           }
         }
+        res.status(200).json({ success: true });
 
         // console.log(results, "hellows");
       }
