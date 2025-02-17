@@ -96,7 +96,7 @@ export const parseFacebookAdLibraryRequest = (data, options) => {
     platform_id: page?.id || adCardData?.snapshot?.page_id?.toString(),
     platform_url: page?.url || adCardData?.snapshot?.page_profile_uri,
   };
-  const adCategories = Object.values(snapshot.page_categories)
+  const adCategories = Object.values(snapshot?.page_categories)
     .map((category) => findTopMatch(options.categories, category))
     .filter((category) => !!category);
   const newAd = {
