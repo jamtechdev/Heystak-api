@@ -22,7 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(
   "/generated_images",
-  express.static(path.join(__dirname, "generated_images"))
+  express.static(path.join(__dirname,"service", "generated_images"))
 );
 
 app.use(express.urlencoded({ extended: true }));

@@ -98,13 +98,13 @@ function parseGeneratedScript(
     const lines = block.split("\n").filter((line) => line);
     const scriptCopyLine = lines.find((line) => line.includes("Script Copy:"));
     const scriptCopy = scriptCopyLine
-      ? scriptCopyLine.replace("Script Copy:", "").trim()
+      ? scriptCopyLine?.replace("Script Copy:", "").trim()
       : "No content available";
     const actionDescriptionLine = lines.find((line) =>
       line.includes("Action & Description:")
     );
     const actionDescription = actionDescriptionLine
-      ? actionDescriptionLine.replace("Action & Description:", "").trim()
+      ? actionDescriptionLine?.replace("Action & Description:", "").trim()
       : "No action available";
     const textOverlayLine = lines.find((line) =>
       line.includes("Text Overlay:")
@@ -113,11 +113,11 @@ function parseGeneratedScript(
       line.includes("Image Description:")
     );
     const textOverlay = textOverlayLine
-      ? textOverlayLine.replace("Text Overlay:", "").trim()
+      ? textOverlayLine?.replace("Text Overlay:", "").trim()
       : "No overlay available";
     const intentLine = lines.find((line) => line.includes("Intent Analysis:"));
     const intent = intentLine
-      ? intentLine.replace("Intent Analysis:", "").trim()
+      ? intentLine?.replace("Intent Analysis:", "").trim()
       : "No intent available";
     CallToAction.push(intent);
     const { words, duration } = calculateWordCountAndDuration(scriptCopy);
@@ -242,8 +242,8 @@ function getImageDescriptionsOnly(scenes) {
   return scenes.map((scene) => ({
     sceneNumber: scene.scene_number,
     imageDescription: scene.imageDescriptionLine
-      .replace("- Image Description: ", "")
-      .trim(),
+      ?.replace("- Image Description: ", "")
+      ?.trim(),
   }));
 }
 router.get("/", (req, res) => {
