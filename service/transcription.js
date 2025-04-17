@@ -361,6 +361,6 @@ router.post("/generate-image", async (req, res) => {
     });
   }
 });
-router.post("/ad-tracker", Authenticate, adTrackerController?.trackAd);
+router.post("/ad-tracker", adTrackerController?.trackAd);
 router.post("/upload-media", Authenticate, adTrackerController.getAd);
 export default router;

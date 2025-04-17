@@ -340,7 +340,7 @@ const processVideo = async (videoUrl) => {
 
 
 
-function formatPersona(personaString) {
+const formatPersona = (personaString) => {
   const lines = personaString.split('\n');
   let personName = '';
   let descriptionLines = [];
@@ -367,7 +367,7 @@ function formatPersona(personaString) {
   };
 }
 
-async function createPersonaFromTranscript(transcript) {
+const createPersonaFromTranscript = async (transcript) => {
 
   try {
     const completion = await openai.chat.completions.create({
@@ -408,6 +408,36 @@ async function createPersonaFromTranscript(transcript) {
 }
 
 
+const generateHeadline = async (body) => {
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4-turbo",
+      messages: [
+        {
+          role: "system",
+          content: `Analyze this ad script and return a headline for ad it should be good and concise`,
+        },
+        {
+          role: "user",
+          content: `Here is the ad script: "${body}"`,
+        },
+      ], temperature: 0, top_p: 0.2
+    });
+
+    if (completion.choices && completion.choices.length > 0) {
+      const headline = completion.choices[0].message.content;
+
+      return headline;
+    } else {
+      console.warn("No headline generated.");
+      return null;
+    }
+  } catch (error) {
+    console.error("Error creating headline:", error);
+    throw error;
+  }
+}
+
 const ASSETS_BUCKET = "assets";
 
 const adTrackerController = {
@@ -443,6 +473,533 @@ const adTrackerController = {
         scrappingData = scrappingData.concat(item);
       });
 
+      // let scrappingData = [{
+      //   "ad_archive_id": "557749506622153",
+      //   "ad_id": null,
+      //   "archive_types": [],
+      //   "categories": [
+      //     "UNKNOWN"
+      //   ],
+      //   "collation_count": 3,
+      //   "collation_id": "1258593788668517",
+      //   "contains_digital_created_media": false,
+      //   "contains_sensitive_content": false,
+      //   "currency": "",
+      //   "end_date": 1744786800,
+      //   "entity_type": "PERSON_PROFILE",
+      //   "fev_info": null,
+      //   "gated_type": "ELIGIBLE",
+      //   "has_user_reported": false,
+      //   "hidden_safety_data": false,
+      //   "hide_data_status": "NONE",
+      //   "impressions_with_index": {
+      //     "impressions_text": null,
+      //     "impressions_index": -1
+      //   },
+      //   "is_aaa_eligible": true,
+      //   "is_active": true,
+      //   "is_profile_page": false,
+      //   "menu_items": [],
+      //   "page_id": "106303752098912",
+      //   "page_is_deleted": false,
+      //   "page_name": "Curvy-faja",
+      //   "political_countries": [],
+      //   "publisher_platform": [
+      //     "FACEBOOK",
+      //     "INSTAGRAM",
+      //     "AUDIENCE_NETWORK",
+      //     "MESSENGER"
+      //   ],
+      //   "reach_estimate": null,
+      //   "regional_regulation_data": {
+      //     "finserv": {
+      //       "is_deemed_finserv": false,
+      //       "is_limited_delivery": false
+      //     },
+      //     "tw_anti_scam": {
+      //       "is_limited_delivery": true
+      //     }
+      //   },
+      //   "report_count": null,
+      //   "snapshot": {
+      //     "body": {
+      //       "text": "Then don't miss our clearance sale!😍\nPay with code: 𝙛𝙖𝙟𝙖💖Get 10% off\nBuy new sale items while they last!"
+      //     },
+      //     "branded_content": null,
+      //     "brazil_tax_id": null,
+      //     "byline": null,
+      //     "caption": "curvy-faja.com",
+      //     "cards": [],
+      //     "cta_text": "Shop now",
+      //     "cta_type": "SHOP_NOW",
+      //     "country_iso_code": null,
+      //     "current_page_name": "Curvy-faja",
+      //     "disclaimer_label": null,
+      //     "display_format": "VIDEO",
+      //     "event": null,
+      //     "images": [],
+      //     "is_reshared": false,
+      //     "link_description": null,
+      //     "link_url": "https://curvy-faja.com/products/women-fajas-bodyshaper-2033-22092041-1",
+      //     "page_categories": [
+      //       "Clothing (Brand)"
+      //     ],
+      //     "page_entity_type": "PERSON_PROFILE",
+      //     "page_id": "106303752098912",
+      //     "page_is_deleted": false,
+      //     "page_is_profile_page": false,
+      //     "page_like_count": 315801,
+      //     "page_name": "Curvy-faja",
+      //     "page_profile_picture_url": "https://scontent-lhr8-2.xx.fbcdn.net/v/t39.35426-6/464337046_565487416011615_3003700285283842553_n.jpg?stp=dst-jpg_s60x60_tt6&_nc_cat=101&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=pxQut3YUHx0Q7kNvwH1wdsT&_nc_oc=AdnSyDMHDMxmn_m5exKHs4g8r21KhP0qStOfJ9wskygdogqIO61FA9npPtbYF8dLaXf-qRYJui89hM710qYo7HgP&_nc_zt=14&_nc_ht=scontent-lhr8-2.xx&_nc_gid=QlVm0tNk9w4LWz5QuNiwtQ&oh=00_AfGsZGqE8kLcRb2dj6oSKXABP_Va2Sfc3AUDnZTD5zZKtQ&oe=68058AB3",
+      //     "page_profile_uri": "https://www.facebook.com/100083049946365/",
+      //     "root_reshared_post": null,
+      //     "title": null,
+      //     "videos": [
+      //       {
+      //         "video_hd_url": "https://video-lhr6-1.xx.fbcdn.net/v/t42.1790-2/464533115_557749553288815_2962199114930450117_n.?_nc_cat=110&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=CPW-U8NqeiQQ7kNvwEnTx4K&_nc_oc=Adl9ZxYZqj4B0-2Ov_8BKES3QSxg5djrG_9fng4NTRSwKUgv0gJmIxg0M7b538lUdWUSb89mXJgk-Ro42iQcanKb&_nc_zt=28&_nc_ht=video-lhr6-1.xx&_nc_gid=QlVm0tNk9w4LWz5QuNiwtQ&oh=00_AfHD59HLXVHjPfDYRBAV8zYAqmMRFvALUXgeaAA9eAlTZA&oe=680561C5",
+      //         "video_preview_image_url": "https://scontent-lhr6-1.xx.fbcdn.net/v/t39.35426-6/464277299_1263503054841236_6759625373866225682_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=yN6OReecbxgQ7kNvwHrSAON&_nc_oc=AdmjO4g_lY6kaigg6EPGdXLtEpU0JZiS-ht18oSzfd_kVlHm7UxJwmNKFh1FTICVFsEPWCyrpB0ry0ZJCfF_L0n3&_nc_zt=14&_nc_ht=scontent-lhr6-1.xx&_nc_gid=QlVm0tNk9w4LWz5QuNiwtQ&oh=00_AfGZKs3lzxFfNFfg9mH01ZNspgu91uWzsWZyRJTLvRnX4A&oe=68055BB1",
+      //         "video_sd_url": "https://video-lhr8-1.xx.fbcdn.net/v/t42.1790-2/435638794_1451061688835761_4719419807983719822_n.mp4?_nc_cat=107&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=ZmnUJrTtWzAQ7kNvwHr_qN_&_nc_oc=AdlgC7IRT6m0H5gvgZO7kf0uTdyXVO-K-PCHjkjwB8bysGaGnWNqW_HvVFZNy1P1FQI8UXAq4snPwky8OGn862vh&_nc_zt=28&_nc_ht=video-lhr8-1.xx&_nc_gid=QlVm0tNk9w4LWz5QuNiwtQ&oh=00_AfG0lnaYFDfPFSmCWq92kIBjRfQypgmbrIJp2lhHxaysNQ&oe=6805623F",
+      //         "watermarked_video_hd_url": "",
+      //         "watermarked_video_sd_url": ""
+      //       }
+      //     ],
+      //     "additional_info": null,
+      //     "ec_certificates": [],
+      //     "extra_images": [],
+      //     "extra_links": [],
+      //     "extra_texts": [],
+      //     "extra_videos": []
+      //   },
+      //   "spend": null,
+      //   "start_date": 1729753200,
+      //   "state_media_run_label": null,
+      //   "targeted_or_reached_countries": [],
+      //   "total_active_time": null,
+      //   "url": "https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IN&is_targeted_country=false&media_type=all&search_type=page&view_all_page_id=106303752098912",
+      //   "total": 28
+      // },
+      // {
+      //   "ad_archive_id": "849192297418770",
+      //   "ad_id": null,
+      //   "archive_types": [],
+      //   "categories": [
+      //     "UNKNOWN"
+      //   ],
+      //   "collation_count": null,
+      //   "collation_id": "1258593788668517",
+      //   "contains_digital_created_media": false,
+      //   "contains_sensitive_content": false,
+      //   "currency": "",
+      //   "end_date": 1744786800,
+      //   "entity_type": "PERSON_PROFILE",
+      //   "fev_info": null,
+      //   "gated_type": "ELIGIBLE",
+      //   "has_user_reported": false,
+      //   "hidden_safety_data": false,
+      //   "hide_data_status": "NONE",
+      //   "impressions_with_index": {
+      //     "impressions_text": null,
+      //     "impressions_index": -1
+      //   },
+      //   "is_aaa_eligible": true,
+      //   "is_active": true,
+      //   "is_profile_page": false,
+      //   "menu_items": [],
+      //   "page_id": "106303752098912",
+      //   "page_is_deleted": false,
+      //   "page_name": "Curvy-faja",
+      //   "political_countries": [],
+      //   "publisher_platform": [
+      //     "FACEBOOK",
+      //     "INSTAGRAM",
+      //     "AUDIENCE_NETWORK",
+      //     "MESSENGER"
+      //   ],
+      //   "reach_estimate": null,
+      //   "regional_regulation_data": {
+      //     "finserv": {
+      //       "is_deemed_finserv": false,
+      //       "is_limited_delivery": false
+      //     },
+      //     "tw_anti_scam": {
+      //       "is_limited_delivery": true
+      //     }
+      //   },
+      //   "report_count": null,
+      //   "snapshot": {
+      //     "body": {
+      //       "text": "Then don't miss our clearance sale!😍\nPay with code: 𝙛𝙖𝙟𝙖💖Get 10% off\nBuy new sale items while they last!"
+      //     },
+      //     "branded_content": null,
+      //     "brazil_tax_id": null,
+      //     "byline": null,
+      //     "caption": "curvy-faja.com",
+      //     "cards": [],
+      //     "cta_text": "Shop now",
+      //     "cta_type": "SHOP_NOW",
+      //     "country_iso_code": null,
+      //     "current_page_name": "Curvy-faja",
+      //     "disclaimer_label": null,
+      //     "display_format": "VIDEO",
+      //     "event": null,
+      //     "images": [],
+      //     "is_reshared": false,
+      //     "link_description": null,
+      //     "link_url": "https://curvy-faja.com/products/women-fajas-bodyshaper-2033-22092041-1",
+      //     "page_categories": [
+      //       "Clothing (Brand)"
+      //     ],
+      //     "page_entity_type": "PERSON_PROFILE",
+      //     "page_id": "106303752098912",
+      //     "page_is_deleted": false,
+      //     "page_is_profile_page": false,
+      //     "page_like_count": 315801,
+      //     "page_name": "Curvy-faja",
+      //     "page_profile_picture_url": "https://scontent-lhr8-2.xx.fbcdn.net/v/t39.35426-6/464310807_1196379128328893_5414944746979019643_n.jpg?stp=dst-jpg_s60x60_tt6&_nc_cat=101&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=LkdWdmla37AQ7kNvwH0H137&_nc_oc=AdmVe9920lWGn0Wypp55yPKPxY2mo3dr1PJF398-db-09VBlfCQucrMWwPyS6l9XP7wWbY6hidzraBgb1eUjejGQ&_nc_zt=14&_nc_ht=scontent-lhr8-2.xx&_nc_gid=QlVm0tNk9w4LWz5QuNiwtQ&oh=00_AfHFrfQjLtr38997li798ggo-uIEGbVX5hjQE9WzhC_VYA&oe=68057FB2",
+      //     "page_profile_uri": "https://www.facebook.com/100083049946365/",
+      //     "root_reshared_post": null,
+      //     "title": null,
+      //     "videos": [
+      //       {
+      //         "video_hd_url": "https://video-lhr8-2.xx.fbcdn.net/v/t42.1790-2/464471306_849192327418767_381376151106401189_n.?_nc_cat=101&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=ZWchk0bJ8FMQ7kNvwHT6OQg&_nc_oc=AdlY-kgDcyF8mJLGg5ZEEw7U-ne0grHQhSXZnpuL0d3lSZSNJn0-mPsR7Ov1Vr_X_oarVFfuFgqTznlaEhReHq5P&_nc_zt=28&_nc_ht=video-lhr8-2.xx&_nc_gid=QlVm0tNk9w4LWz5QuNiwtQ&oh=00_AfHUHqE4ZW4AkArZL2A4scgw5T8BP6syr0AYThKu-dyQ9w&oe=68057D91",
+      //         "video_preview_image_url": "https://scontent-lhr8-2.xx.fbcdn.net/v/t39.35426-6/464075616_397031150148374_3572744796307778994_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=3NhQlnhMYXwQ7kNvwFNNEwz&_nc_oc=Adnl3O4Go51v2vzwP2hlgrghsXxPIpSan9q7cCfNnB6-1vctn95FmH4fqLAfh6LLh7KcF9PqQmICVFfXKg_SQLrM&_nc_zt=14&_nc_ht=scontent-lhr8-2.xx&_nc_gid=QlVm0tNk9w4LWz5QuNiwtQ&oh=00_AfGhcOSm9GxXRHSzqnre5AcujfcLNkdAwiVenP3K2VCpCQ&oe=68056639",
+      //         "video_sd_url": "https://video-lhr8-1.xx.fbcdn.net/v/t42.1790-2/435638794_1451061688835761_4719419807983719822_n.mp4?_nc_cat=107&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=ZmnUJrTtWzAQ7kNvwHr_qN_&_nc_oc=AdlgC7IRT6m0H5gvgZO7kf0uTdyXVO-K-PCHjkjwB8bysGaGnWNqW_HvVFZNy1P1FQI8UXAq4snPwky8OGn862vh&_nc_zt=28&_nc_ht=video-lhr8-1.xx&_nc_gid=QlVm0tNk9w4LWz5QuNiwtQ&oh=00_AfG0lnaYFDfPFSmCWq92kIBjRfQypgmbrIJp2lhHxaysNQ&oe=6805623F",
+      //         "watermarked_video_hd_url": "",
+      //         "watermarked_video_sd_url": ""
+      //       }
+      //     ],
+      //     "additional_info": null,
+      //     "ec_certificates": [],
+      //     "extra_images": [],
+      //     "extra_links": [],
+      //     "extra_texts": [],
+      //     "extra_videos": []
+      //   },
+      //   "spend": null,
+      //   "start_date": 1729753200,
+      //   "state_media_run_label": null,
+      //   "targeted_or_reached_countries": [],
+      //   "total_active_time": null,
+      //   "url": "https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IN&is_targeted_country=false&media_type=all&search_type=page&view_all_page_id=106303752098912",
+      //   "total": 28
+      // },
+      // {
+      //   "ad_archive_id": "745104347803973",
+      //   "ad_id": null,
+      //   "archive_types": [],
+      //   "categories": [
+      //     "UNKNOWN"
+      //   ],
+      //   "collation_count": 1,
+      //   "collation_id": "1634017314127198",
+      //   "contains_digital_created_media": false,
+      //   "contains_sensitive_content": false,
+      //   "currency": "",
+      //   "end_date": 1744786800,
+      //   "entity_type": "PERSON_PROFILE",
+      //   "fev_info": null,
+      //   "gated_type": "ELIGIBLE",
+      //   "has_user_reported": false,
+      //   "hidden_safety_data": false,
+      //   "hide_data_status": "NONE",
+      //   "impressions_with_index": {
+      //     "impressions_text": null,
+      //     "impressions_index": -1
+      //   },
+      //   "is_aaa_eligible": true,
+      //   "is_active": true,
+      //   "is_profile_page": false,
+      //   "menu_items": [],
+      //   "page_id": "106303752098912",
+      //   "page_is_deleted": false,
+      //   "page_name": "Curvy-faja",
+      //   "political_countries": [],
+      //   "publisher_platform": [
+      //     "FACEBOOK",
+      //     "INSTAGRAM",
+      //     "AUDIENCE_NETWORK",
+      //     "MESSENGER"
+      //   ],
+      //   "reach_estimate": null,
+      //   "regional_regulation_data": {
+      //     "finserv": {
+      //       "is_deemed_finserv": false,
+      //       "is_limited_delivery": false
+      //     },
+      //     "tw_anti_scam": {
+      //       "is_limited_delivery": true
+      //     }
+      //   },
+      //   "report_count": null,
+      //   "snapshot": {
+      //     "body": {
+      //       "text": "Then don't miss our clearance sale!😍\nPay with code: 𝙛𝙖𝙟𝙖💖Get 10% off\nBuy new sale items while they last!"
+      //     },
+      //     "branded_content": null,
+      //     "brazil_tax_id": null,
+      //     "byline": null,
+      //     "caption": "curvy-faja.com",
+      //     "cards": [],
+      //     "cta_text": "Shop now",
+      //     "cta_type": "SHOP_NOW",
+      //     "country_iso_code": null,
+      //     "current_page_name": "Curvy-faja",
+      //     "disclaimer_label": null,
+      //     "display_format": "VIDEO",
+      //     "event": null,
+      //     "images": [],
+      //     "is_reshared": false,
+      //     "link_description": null,
+      //     "link_url": "https://curvy-faja.com/products/women-fajas-bodyshaper-2033-22092041-1",
+      //     "page_categories": [
+      //       "Clothing (Brand)"
+      //     ],
+      //     "page_entity_type": "PERSON_PROFILE",
+      //     "page_id": "106303752098912",
+      //     "page_is_deleted": false,
+      //     "page_is_profile_page": false,
+      //     "page_like_count": 315801,
+      //     "page_name": "Curvy-faja",
+      //     "page_profile_picture_url": "https://scontent-lhr8-2.xx.fbcdn.net/v/t39.35426-6/464570432_472915445773227_7189297536065595610_n.jpg?stp=dst-jpg_s60x60_tt6&_nc_cat=106&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=earbu2sB2zwQ7kNvwHxCA4T&_nc_oc=AdnurcvtWur0wuhKQmnIsJ2xw4ojojm7GEaNo-xjv_EQQ-bJELoky-6iHr0S4EikwoJRZyk26fQ6b4spbEwKcudy&_nc_zt=14&_nc_ht=scontent-lhr8-2.xx&_nc_gid=QlVm0tNk9w4LWz5QuNiwtQ&oh=00_AfF5UhnSAscRhgZfHdo99NsU-o-S66WeQs4IYrKMsvTrRw&oe=680584D5",
+      //     "page_profile_uri": "https://www.facebook.com/100083049946365/",
+      //     "root_reshared_post": null,
+      //     "title": null,
+      //     "videos": [
+      //       {
+      //         "video_hd_url": "https://video-lhr6-1.xx.fbcdn.net/v/t42.1790-2/464571572_745104391137302_8074279735263179172_n.?_nc_cat=109&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=BzeBTQ97RHMQ7kNvwF4idla&_nc_oc=Adkx44h9cBrayBh-vWMSaZLBC-OSCdBdxyEOAUahZ7D9oyz6VQ7OLJrWG2u9Z3JiBHGv8FuObV8WHqlM7qX7OO4D&_nc_zt=28&_nc_ht=video-lhr6-1.xx&_nc_gid=QlVm0tNk9w4LWz5QuNiwtQ&oh=00_AfG1hiOC7xpe48aHvKgqpx3rqItMHL-IiIHqmzHYIL5EKQ&oe=68056BF2",
+      //         "video_preview_image_url": "https://scontent-lhr8-1.xx.fbcdn.net/v/t39.35426-6/464197570_1977116276066364_5090169453656990328_n.jpg?_nc_cat=108&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=VRfx4tRUoHQQ7kNvwEVuvtE&_nc_oc=AdkZtiUbCl_wztFJntkwRMvanct-jKkqd41uR2WyE0uuFOh2ehdOpvs-v_jtAiarpwH_Y818bDroNyxlMIX-zJNe&_nc_zt=14&_nc_ht=scontent-lhr8-1.xx&_nc_gid=QlVm0tNk9w4LWz5QuNiwtQ&oh=00_AfFejTeTdzCF725FSaEPL8J7TXiIMWs0wdDpL9bWDV8LpQ&oe=68056E57",
+      //         "video_sd_url": "https://video-lhr8-1.xx.fbcdn.net/v/t42.1790-2/435638794_1451061688835761_4719419807983719822_n.mp4?_nc_cat=107&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=ZmnUJrTtWzAQ7kNvwHr_qN_&_nc_oc=AdlgC7IRT6m0H5gvgZO7kf0uTdyXVO-K-PCHjkjwB8bysGaGnWNqW_HvVFZNy1P1FQI8UXAq4snPwky8OGn862vh&_nc_zt=28&_nc_ht=video-lhr8-1.xx&_nc_gid=QlVm0tNk9w4LWz5QuNiwtQ&oh=00_AfG0lnaYFDfPFSmCWq92kIBjRfQypgmbrIJp2lhHxaysNQ&oe=6805623F",
+      //         "watermarked_video_hd_url": "",
+      //         "watermarked_video_sd_url": ""
+      //       }
+      //     ],
+      //     "additional_info": null,
+      //     "ec_certificates": [],
+      //     "extra_images": [],
+      //     "extra_links": [],
+      //     "extra_texts": [],
+      //     "extra_videos": []
+      //   },
+      //   "spend": null,
+      //   "start_date": 1729753200,
+      //   "state_media_run_label": null,
+      //   "targeted_or_reached_countries": [],
+      //   "total_active_time": null,
+      //   "url": "https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IN&is_targeted_country=false&media_type=all&search_type=page&view_all_page_id=106303752098912",
+      //   "total": 28
+      // },
+      // {
+      //   "ad_archive_id": "551562313911505",
+      //   "ad_id": null,
+      //   "archive_types": [],
+      //   "categories": [
+      //     "UNKNOWN"
+      //   ],
+      //   "collation_count": 1,
+      //   "collation_id": "560189343116277",
+      //   "contains_digital_created_media": false,
+      //   "contains_sensitive_content": false,
+      //   "currency": "",
+      //   "end_date": 1744700400,
+      //   "entity_type": "PERSON_PROFILE",
+      //   "fev_info": null,
+      //   "gated_type": "ELIGIBLE",
+      //   "has_user_reported": false,
+      //   "hidden_safety_data": false,
+      //   "hide_data_status": "NONE",
+      //   "impressions_with_index": {
+      //     "impressions_text": null,
+      //     "impressions_index": -1
+      //   },
+      //   "is_aaa_eligible": true,
+      //   "is_active": true,
+      //   "is_profile_page": false,
+      //   "menu_items": [],
+      //   "page_id": "106303752098912",
+      //   "page_is_deleted": false,
+      //   "page_name": "Curvy-faja",
+      //   "political_countries": [],
+      //   "publisher_platform": [
+      //     "FACEBOOK",
+      //     "INSTAGRAM",
+      //     "AUDIENCE_NETWORK",
+      //     "MESSENGER"
+      //   ],
+      //   "reach_estimate": null,
+      //   "regional_regulation_data": {
+      //     "finserv": {
+      //       "is_deemed_finserv": false,
+      //       "is_limited_delivery": false
+      //     },
+      //     "tw_anti_scam": {
+      //       "is_limited_delivery": true
+      //     }
+      //   },
+      //   "report_count": null,
+      //   "snapshot": {
+      //     "body": {
+      //       "text": "¡Entonces no te pierdas nuestra venta de liquidación!😍\nPaga con el código: 𝙛𝙖𝙟𝙖💖Obtén un 10 % de descuento\n¡Compre artículos nuevos en oferta mientras duren!"
+      //     },
+      //     "branded_content": null,
+      //     "brazil_tax_id": null,
+      //     "byline": null,
+      //     "caption": "curvy-faja.com",
+      //     "cards": [],
+      //     "cta_text": "Shop now",
+      //     "cta_type": "SHOP_NOW",
+      //     "country_iso_code": null,
+      //     "current_page_name": "Curvy-faja",
+      //     "disclaimer_label": null,
+      //     "display_format": "VIDEO",
+      //     "event": null,
+      //     "images": [],
+      //     "is_reshared": false,
+      //     "link_description": null,
+      //     "link_url": "https://curvy-faja.com/products/slimming-bodyshaper-pre-sale-cvy231104163-1",
+      //     "page_categories": [
+      //       "Clothing (Brand)"
+      //     ],
+      //     "page_entity_type": "PERSON_PROFILE",
+      //     "page_id": "106303752098912",
+      //     "page_is_deleted": false,
+      //     "page_is_profile_page": false,
+      //     "page_like_count": 315801,
+      //     "page_name": "Curvy-faja",
+      //     "page_profile_picture_url": "https://scontent-lhr8-2.xx.fbcdn.net/v/t39.35426-6/447720853_1383208525681878_3724893442703397229_n.jpg?stp=dst-jpg_s60x60_tt6&_nc_cat=101&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=h3TBO446HPYQ7kNvwF8YEFq&_nc_oc=Adl8Eo5ooy9YfUmcvB6nSVGyc2cV9eFQrVRDUQZ7v4aWh1fFmJRZAUmuLc-rW2wAGZOEVOgPHipF1-QK4Aaryn9e&_nc_zt=14&_nc_ht=scontent-lhr8-2.xx&_nc_gid=QlVm0tNk9w4LWz5QuNiwtQ&oh=00_AfHizPdm5Vxy5z7_tH-zvSooP6f3xeIAAgeTrDUsoAOCrA&oe=68057C4F",
+      //     "page_profile_uri": "https://www.facebook.com/100083049946365/",
+      //     "root_reshared_post": null,
+      //     "title": null,
+      //     "videos": [
+      //       {
+      //         "video_hd_url": "https://video-lhr6-1.xx.fbcdn.net/v/t42.1790-2/447984006_1151353592852970_2447200595979671408_n.?_nc_cat=110&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=Ewt0TnKK0cUQ7kNvwECsH3D&_nc_oc=AdlDy0NSoC2boUaF6ly-BAv4E_8lE6_jMc-UYBH6Dh8XuCpEolGlpOMUDtx_t-3Cdg1yaxuXzzFuMdBzLSgCqkco&_nc_zt=28&_nc_ht=video-lhr6-1.xx&_nc_gid=QlVm0tNk9w4LWz5QuNiwtQ&oh=00_AfG7W-HroUexnv2G3rBd9uL--YrjqHmchskZUatPx7Lalw&oe=680559D1",
+      //         "video_preview_image_url": "https://scontent-lhr6-1.xx.fbcdn.net/v/t39.35426-6/447674867_1078009036529767_6143144731959173118_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=ucs6PcU52JsQ7kNvwF_yKNU&_nc_oc=AdnXus3Jgf7wOTGEhCdZzTgqLn1QGby225c6Rzz8wzAADY_kWkx8VP3w_0yBG_bpv4wDuWGlOJLaGKr_hWN9OKKg&_nc_zt=14&_nc_ht=scontent-lhr6-1.xx&_nc_gid=QlVm0tNk9w4LWz5QuNiwtQ&oh=00_AfG8_I4SDWjdhftuxEeeX0FFh4IuBPKFC33DzcD-ZGytLQ&oe=68058086",
+      //         "video_sd_url": "https://video-lhr8-1.xx.fbcdn.net/v/t42.1790-2/447966128_1140738147142826_7368599118672006421_n.mp4?_nc_cat=107&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=yadT7R5ALiYQ7kNvwEOQQTX&_nc_oc=AdnIkC9wzTGKTZ_HiFAQIogNkN-B0SwD9lXJtIhoo-f3R6D73axBu2Yt0GsB1CKmR9WrnyP9-ezZVMdADMbsVoC9&_nc_zt=28&_nc_ht=video-lhr8-1.xx&_nc_gid=QlVm0tNk9w4LWz5QuNiwtQ&oh=00_AfGenKLNLXXe7Vn8TeANgIxKIRxMYlZHa4JgCuGPCyv6EA&oe=68057E15",
+      //         "watermarked_video_hd_url": "",
+      //         "watermarked_video_sd_url": ""
+      //       }
+      //     ],
+      //     "additional_info": null,
+      //     "ec_certificates": [],
+      //     "extra_images": [],
+      //     "extra_links": [],
+      //     "extra_texts": [],
+      //     "extra_videos": []
+      //   },
+      //   "spend": null,
+      //   "start_date": 1728802800,
+      //   "state_media_run_label": null,
+      //   "targeted_or_reached_countries": [],
+      //   "total_active_time": null,
+      //   "url": "https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IN&is_targeted_country=false&media_type=all&search_type=page&view_all_page_id=106303752098912",
+      //   "total": 28
+      // },
+      // {
+      //   "ad_archive_id": "803683148505119",
+      //   "ad_id": null,
+      //   "archive_types": [],
+      //   "categories": [
+      //     "UNKNOWN"
+      //   ],
+      //   "collation_count": 2,
+      //   "collation_id": "187534873739517",
+      //   "contains_digital_created_media": false,
+      //   "contains_sensitive_content": false,
+      //   "currency": "",
+      //   "end_date": 1744700400,
+      //   "entity_type": "PERSON_PROFILE",
+      //   "fev_info": null,
+      //   "gated_type": "ELIGIBLE",
+      //   "has_user_reported": false,
+      //   "hidden_safety_data": false,
+      //   "hide_data_status": "NONE",
+      //   "impressions_with_index": {
+      //     "impressions_text": null,
+      //     "impressions_index": -1
+      //   },
+      //   "is_aaa_eligible": true,
+      //   "is_active": true,
+      //   "is_profile_page": false,
+      //   "menu_items": [],
+      //   "page_id": "106303752098912",
+      //   "page_is_deleted": false,
+      //   "page_name": "Curvy-faja",
+      //   "political_countries": [],
+      //   "publisher_platform": [
+      //     "FACEBOOK",
+      //     "INSTAGRAM",
+      //     "AUDIENCE_NETWORK",
+      //     "MESSENGER"
+      //   ],
+      //   "reach_estimate": null,
+      //   "regional_regulation_data": {
+      //     "finserv": {
+      //       "is_deemed_finserv": false,
+      //       "is_limited_delivery": false
+      //     },
+      //     "tw_anti_scam": {
+      //       "is_limited_delivery": true
+      //     }
+      //   },
+      //   "report_count": null,
+      //   "snapshot": {
+      //     "body": {
+      //       "text": "¡Venta de liquidación! Obtenga un 10% de descuento en su compra.\nCódigo de descuento: faja\n¡Puede contactarnos para comprar!"
+      //     },
+      //     "branded_content": null,
+      //     "brazil_tax_id": null,
+      //     "byline": null,
+      //     "caption": "curvy-faja.com",
+      //     "cards": [],
+      //     "cta_text": "Shop now",
+      //     "cta_type": "SHOP_NOW",
+      //     "country_iso_code": null,
+      //     "current_page_name": "Curvy-faja",
+      //     "disclaimer_label": null,
+      //     "display_format": "VIDEO",
+      //     "event": null,
+      //     "images": [],
+      //     "is_reshared": false,
+      //     "link_description": null,
+      //     "link_url": "https://curvy-faja.com/es/products/hourglass-waistband-23041182-1",
+      //     "page_categories": [
+      //       "Clothing (Brand)"
+      //     ],
+      //     "page_entity_type": "PERSON_PROFILE",
+      //     "page_id": "106303752098912",
+      //     "page_is_deleted": false,
+      //     "page_is_profile_page": false,
+      //     "page_like_count": 315801,
+      //     "page_name": "Curvy-faja",
+      //     "page_profile_picture_url": "https://scontent-lhr8-1.xx.fbcdn.net/v/t39.35426-6/448898826_982867223622150_5124883634338874804_n.jpg?stp=dst-jpg_s60x60_tt6&_nc_cat=111&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=HlCbu2VC-TcQ7kNvwGIYehY&_nc_oc=AdlGNlmbTO91iZltMKcbd5ZVuI7F4kexbARmkpdd4wF6i211fyQdqtcvS5TbMFoJgpCcEvzDLZoWIO3pUXev_F0d&_nc_zt=14&_nc_ht=scontent-lhr8-1.xx&_nc_gid=QlVm0tNk9w4LWz5QuNiwtQ&oh=00_AfExDpWb0Le-ZCl8BChhQgbSt9XtkpylrpIK0fmYsQOT9Q&oe=68058637",
+      //     "page_profile_uri": "https://www.facebook.com/100083049946365/",
+      //     "root_reshared_post": null,
+      //     "title": "Para ti",
+      //     "videos": [
+      //       {
+      //         "video_hd_url": "https://video-lhr8-1.xx.fbcdn.net/v/t42.1790-2/448932529_833604258665600_3769747587298711247_n.?_nc_cat=107&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=5fQCy0XwdOYQ7kNvwGuqQuG&_nc_oc=AdkHG0k6l5jn7N1ptBn3Pa5zBE3wvYTfSDIIhrqKzV-G4p0KHO7C4H_-wB6JRfErkLE74lzW0e61vCwkjlEnav3p&_nc_zt=28&_nc_ht=video-lhr8-1.xx&_nc_gid=QlVm0tNk9w4LWz5QuNiwtQ&oh=00_AfFMn-Hpt0HDxfJWAY3ZndIsujnonluI9KN3AD3H7qHAAA&oe=68056C3A",
+      //         "video_preview_image_url": "https://scontent-lhr6-2.xx.fbcdn.net/v/t39.35426-6/448829073_7332641430175778_4771004050704261091_n.jpg?_nc_cat=100&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=3QniZqPO9qUQ7kNvwGxymzh&_nc_oc=Adkr12OmsRCeyZOtWdjRvQOYJQSPLX9Y8Qt0xZKT3EgijmJV-w49C23E0hINc5zgMnC9J1M4VK3HtGEUKSNNRFXI&_nc_zt=14&_nc_ht=scontent-lhr6-2.xx&_nc_gid=QlVm0tNk9w4LWz5QuNiwtQ&oh=00_AfG1-ymF8VpGqbQoPsmFI9EvgxIlrcNL6J7e_7MhYeZDMA&oe=6805609F",
+      //         "video_sd_url": "https://video-lhr8-1.xx.fbcdn.net/v/t42.1790-2/343714882_194425896740641_6128939970774789503_n.mp4?_nc_cat=108&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=CiLxM3dInnAQ7kNvwHLkk3j&_nc_oc=AdmGUOBResabcoHpdAijooIII9ZGLwXCvHOBXY8mfXOYden6wPVTu1pmqLJLajLkWq9QthSZe5iATVt5rUp7BWgE&_nc_zt=28&_nc_ht=video-lhr8-1.xx&_nc_gid=QlVm0tNk9w4LWz5QuNiwtQ&oh=00_AfH6s8NNyfCthihtX3j5QDGeN3bSgdW2bsYnDvq38oXixA&oe=68058519",
+      //         "watermarked_video_hd_url": "",
+      //         "watermarked_video_sd_url": ""
+      //       }
+      //     ],
+      //     "additional_info": null,
+      //     "ec_certificates": [],
+      //     "extra_images": [],
+      //     "extra_links": [],
+      //     "extra_texts": [],
+      //     "extra_videos": []
+      //   },
+      //   "spend": null,
+      //   "start_date": 1726383600,
+      //   "state_media_run_label": null,
+      //   "targeted_or_reached_countries": [],
+      //   "total_active_time": null,
+      //   "url": "https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IN&is_targeted_country=false&media_type=all&search_type=page&view_all_page_id=106303752098912",
+      //   "total": 28
+      // },];
+
+
       // res.status(200).send(allSnapshots);
 
 
@@ -462,6 +1019,7 @@ const adTrackerController = {
             let transccipt = []
             let hooks = []
             let persosnaDes = []
+            const headline = await generateHeadline(parsedData.ad.ad_copy)
             if (parsedData?.brand?.logo_url) {
               try {
                 const logoPath = `brands/${parsedData.brand.platform_id}`;
@@ -537,7 +1095,7 @@ const adTrackerController = {
               }
             }
 
-            return { parsedData, assetsUploded, logoResults, transccipt, hooks, persosnaDes };
+            return { parsedData, assetsUploded, logoResults, transccipt, hooks, persosnaDes, headline };
           })
         );
 
